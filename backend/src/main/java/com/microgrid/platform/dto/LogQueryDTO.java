@@ -1,0 +1,17 @@
+package com.microgrid.platform.dto;
+
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+public class LogQueryDTO {
+
+    private String username;
+    private String operationType;
+    private String operationModule;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private Integer pageNum = 1;
+    private Integer pageSize = 20;
+}

@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: microgrid-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: Asia/Shanghai
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/sql:/docker-entrypoint-initdb.d:ro
+    networks:
+      - microgrid-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: microgrid-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - microgrid-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  emqx:
+    image: emqx/emqx:5.7.0
+    container_name: microgrid-emqx
+    restart: unless-stopped
+    environment:
+      EMQX_NODE__NAME: emqx@127.0.0.1
+      EMQX_LISTENERS__TCP__DEFAULT__BIND: 0.0.0.0:1883
+      EMQX_DASHBOARD__LISTENERS__HTTP__BIND: 0.0.0.0:18083
+    ports:
+      - "1883:1883"
+      - "8083:8083"
+      - "8883:8883"
+      - "18083:18083"
+    volumes:
+      - emqx-data:/opt/emqx/data
+      - emqx-log:/opt/emqx/log
+      - emqx-etc:/opt/emqx/etc
+    networks:
+      - microgrid-net
+    healthcheck:
+      test: ["CMD", "emqx", "ctl", "status"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: microgrid-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MQTT_BROKER_URL: tcp://emqx:1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      TZ: Asia/Shanghai
+    ports:
+      - "${BACKEND_PORT}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      emqx:
+        condition: service_healthy
+    networks:
+      - microgrid-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: microgrid-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - microgrid-net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: microgrid-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - microgrid-net
+
+volumes:
+  postgres-data:
+  redis-data:
+  emqx-data:
+  emqx-log:
+  emqx-etc:
+
+networks:
+  microgrid-net:
+    driver: bridge
