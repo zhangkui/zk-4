@@ -82,13 +82,17 @@ export const useUserStore = defineStore('user', () => {
 
   function generateMenus(perms: string[]): string[] {
     const allMenus = [
+      { path: '/admin-home', perm: 'admin-home' },
       { path: '/dashboard', perm: 'dashboard' },
       { path: '/park', perm: 'park' },
       { path: '/device', perm: 'device' },
       { path: '/history', perm: 'history' },
       { path: '/user', perm: 'user' },
       { path: '/role', perm: 'role' },
-      { path: '/log', perm: 'log' },
+      { path: '/permission', perm: 'permission' },
+      { path: '/login-log', perm: 'log' },
+      { path: '/operation-log', perm: 'log' },
+      { path: '/profile', perm: 'profile' },
       { path: '/simulator', perm: 'simulator' }
     ]
     if (perms.includes('*') || perms.includes('ADMIN')) {

@@ -99,7 +99,7 @@ async function handleLogin() {
     loading.value = true
     await userStore.loginAction({ ...loginForm })
     ElMessage.success('登录成功')
-    router.push('/dashboard')
+    router.push('/admin-home')
   } catch (err: any) {
     if (err?.message) {
       ElMessage.error(err.message)

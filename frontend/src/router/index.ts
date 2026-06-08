@@ -17,6 +17,7 @@ export const constantRoutes: RouteRecordRaw[] = [
   },
   {
     path: '/',
+    name: 'Root',
     component: DefaultLayout,
     redirect: '/admin-home',
     meta: { hidden: true },
@@ -152,7 +153,7 @@ router.beforeEach(async (to, _from, next) => {
       const accessedRoutes = filterAsyncRoutes(asyncRoutes, userStore.permissions)
       accessedRoutes.forEach(route => {
         if (!router.hasRoute(route.name as string)) {
-          router.addRoute('/', route)
+          router.addRoute('Root', route)
         }
       })
       dynamicRoutesAdded = true

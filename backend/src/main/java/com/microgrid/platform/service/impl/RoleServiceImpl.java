@@ -13,6 +13,7 @@ import com.microgrid.platform.repository.SysPermissionRepository;
 import com.microgrid.platform.repository.SysRolePermissionRepository;
 import com.microgrid.platform.repository.SysRoleRepository;
 import com.microgrid.platform.service.RoleService;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,7 @@ public class RoleServiceImpl implements RoleService {
     private final SysRoleRepository roleRepository;
     private final SysPermissionRepository permissionRepository;
     private final SysRolePermissionRepository rolePermissionRepository;
+    private final EntityManager entityManager;
 
     @Override
     public RoleDTO getById(Long id) {
@@ -125,12 +127,16 @@ public class RoleServiceImpl implements RoleService {
 
         if (dto.getPermissionIds() != null) {
             rolePermissionRepository.deleteByRoleId(id);
+            entityManager.flush();
+            List<Long> uniqueIds = dto.getPermissionIds().stream().distinct().toList();
             final Long roleId = id;
-            dto.getPermissionIds().forEach(permissionId -> {
-                SysRolePermission rp = new SysRolePermission();
-                rp.setRoleId(roleId);
-                rp.setPermissionId(permissionId);
-                rolePermissionRepository.save(rp);
+            uniqueIds.forEach(permissionId -> {
+                if (!rolePermissionRepository.existsByRoleIdAndPermissionId(roleId, permissionId)) {
+                    SysRolePermission rp = new SysRolePermission();
+                    rp.setRoleId(roleId);
+                    rp.setPermissionId(permissionId);
+                    rolePermissionRepository.save(rp);
+                }
             });
         }
 
@@ -166,12 +172,16 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public void assignPermissions(Long roleId, List<Long> permissionIds) {
         rolePermissionRepository.deleteByRoleId(roleId);
+        entityManager.flush();
         if (permissionIds != null) {
-            permissionIds.forEach(permissionId -> {
-                SysRolePermission rp = new SysRolePermission();
-                rp.setRoleId(roleId);
-                rp.setPermissionId(permissionId);
-                rolePermissionRepository.save(rp);
+            List<Long> uniqueIds = permissionIds.stream().distinct().toList();
+            uniqueIds.forEach(permissionId -> {
+                if (!rolePermissionRepository.existsByRoleIdAndPermissionId(roleId, permissionId)) {
+                    SysRolePermission rp = new SysRolePermission();
+                    rp.setRoleId(roleId);
+                    rp.setPermissionId(permissionId);
+                    rolePermissionRepository.save(rp);
+                }
             });
         }
         log.info("分配角色权限成功: roleId={}", roleId);
