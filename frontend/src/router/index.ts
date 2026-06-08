@@ -81,6 +81,7 @@ const router = createRouter({
 })
 
 const whiteList = ['/login']
+let dynamicRoutesAdded = false
 
 router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore()
@@ -95,24 +96,32 @@ router.beforeEach(async (to, _from, next) => {
     if (!userStore.userInfo) {
       try {
         await userStore.fetchUserInfo()
+        dynamicRoutesAdded = false
       } catch {
         userStore.resetState()
+        dynamicRoutesAdded = false
         next('/login')
         return
       }
     }
 
-    const accessedRoutes = filterAsyncRoutes(asyncRoutes, userStore.permissions)
-    accessedRoutes.forEach(route => {
-      if (!router.hasRoute(route.name as string)) {
-        router.addRoute('/', route)
-      }
-    })
+    if (!dynamicRoutesAdded) {
+      const accessedRoutes = filterAsyncRoutes(asyncRoutes, userStore.permissions)
+      accessedRoutes.forEach(route => {
+        if (!router.hasRoute(route.name as string)) {
+          router.addRoute('/', route)
+        }
+      })
+      dynamicRoutesAdded = true
+      next({ ...to, replace: true })
+      return
+    }
 
-    next({ ...to, replace: true })
+    next()
     return
   }
 
+  dynamicRoutesAdded = false
   if (whiteList.includes(to.path)) {
     next()
   } else {
