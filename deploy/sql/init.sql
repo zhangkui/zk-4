@@ -168,71 +168,6 @@ CREATE INDEX IF NOT EXISTS idx_device_metric_data_device_code_ts ON device_metri
 CREATE INDEX IF NOT EXISTS idx_device_metric_data_metric_code_ts ON device_metric_data(metric_code, ts DESC);
 CREATE INDEX IF NOT EXISTS idx_device_metric_data_park_id_ts ON device_metric_data(park_id, ts DESC);
 
--- ============ 告警模块 ============
-
-CREATE TABLE IF NOT EXISTS alert_rule (
-    id BIGSERIAL PRIMARY KEY,
-    rule_name VARCHAR(100) NOT NULL,
-    rule_code VARCHAR(50) NOT NULL UNIQUE,
-    rule_type VARCHAR(50) NOT NULL,
-    alert_level VARCHAR(20) NOT NULL,
-    scope_type VARCHAR(20) NOT NULL,
-    scope_value VARCHAR(500),
-    park_id BIGINT REFERENCES park(id),
-    device_type VARCHAR(30),
-    device_code VARCHAR(100),
-    threshold_operator VARCHAR(10),
-    threshold_value DECIMAL(20, 6),
-    threshold_value2 DECIMAL(20, 6),
-    metric_code VARCHAR(100),
-    duration_seconds INT NOT NULL DEFAULT 0,
-    recovery_operator VARCHAR(20),
-    recovery_value DECIMAL(20, 6),
-    recovery_value2 DECIMAL(20, 6),
-    description VARCHAR(500),
-    status SMALLINT NOT NULL DEFAULT 1,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_alert_rule_type ON alert_rule(rule_type);
-CREATE INDEX IF NOT EXISTS idx_alert_rule_status ON alert_rule(status);
-CREATE INDEX IF NOT EXISTS idx_alert_rule_level ON alert_rule(alert_level);
-
-CREATE TABLE IF NOT EXISTS alert (
-    id BIGSERIAL PRIMARY KEY,
-    alert_no VARCHAR(50) NOT NULL UNIQUE,
-    rule_id BIGINT NOT NULL REFERENCES alert_rule(id),
-    rule_name VARCHAR(100) NOT NULL,
-    rule_code VARCHAR(50) NOT NULL,
-    rule_type VARCHAR(50) NOT NULL,
-    alert_level VARCHAR(20) NOT NULL,
-    park_id BIGINT REFERENCES park(id),
-    park_name VARCHAR(100),
-    device_id BIGINT REFERENCES device(id),
-    device_code VARCHAR(50) NOT NULL,
-    device_name VARCHAR(100),
-    device_type VARCHAR(30),
-    trigger_value DECIMAL(20, 6),
-    threshold_value DECIMAL(20, 6),
-    metric_code VARCHAR(100),
-    alert_status VARCHAR(20) NOT NULL,
-    trigger_time TIMESTAMP NOT NULL,
-    recovery_time TIMESTAMP,
-    alert_message VARCHAR(500),
-    raw_data TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_alert_rule_id ON alert(rule_id);
-CREATE INDEX IF NOT EXISTS idx_alert_device_code ON alert(device_code);
-CREATE INDEX IF NOT EXISTS idx_alert_status ON alert(alert_status);
-CREATE INDEX IF NOT EXISTS idx_alert_level ON alert(alert_level);
-CREATE INDEX IF NOT EXISTS idx_alert_park_id ON alert(park_id);
-CREATE INDEX IF NOT EXISTS idx_alert_trigger_time ON alert(trigger_time);
-CREATE INDEX IF NOT EXISTS idx_alert_unique ON alert(rule_id, device_code, alert_status);
-
 -- ============ 初始数据 ============
 
 INSERT INTO sys_role (role_code, role_name, description, status) VALUES
@@ -263,20 +198,15 @@ WHERE u.username = 'viewer' AND r.role_code = 'VIEWER'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_permission (permission_code, permission_name, permission_type, parent_id, sort_order, path, icon, component) VALUES
-('admin-home', '管理中心首页', 1, 0, 0, '/admin-home', 'HomeFilled', 'AdminHome'),
-('dashboard', '监测大屏', 1, 0, 1, '/dashboard', 'Monitor', 'Dashboard'),
-('alert-center', '告警中心', 1, 0, 2, '/alert-center', 'Bell', 'AlertCenter'),
-('park', '园区管理', 1, 0, 3, '/park', 'OfficeBuilding', 'ParkList'),
-('device', '设备台账', 1, 0, 4, '/device', 'Cpu', 'DeviceList'),
-('device-detail', '设备详情', 1, 0, 5, '/device-detail', 'Monitor', 'DeviceDetail'),
-('history', '历史数据', 1, 0, 6, '/history', 'Histogram', 'HistoryData'),
-('simulator', '数据模拟器', 1, 0, 7, '/simulator', 'Setting', 'Simulator'),
-('user', '用户管理', 1, 0, 8, '/user', 'User', 'UserList'),
-('role', '角色管理', 1, 0, 9, '/role', 'UserFilled', 'RoleList'),
-('permission', '权限管理', 1, 0, 10, '/permission', 'Lock', 'PermissionList'),
-('alert-rule', '告警规则', 1, 0, 11, '/alert-rule', 'Warning', 'AlertRuleList'),
-('log', '日志审计', 1, 0, 12, '/log', 'Document', 'LogAudit'),
-('profile', '个人中心', 1, 0, 13, '/profile', 'Avatar', 'Profile')
+('dashboard', '监测大屏', 1, 0, 1, '/dashboard', 'DataAnalysis', 'Dashboard'),
+('park', '园区管理', 1, 0, 2, '/park', 'OfficeBuilding', 'ParkList'),
+('device', '设备台账', 1, 0, 3, '/device', 'Cpu', 'DeviceList'),
+('device-detail', '设备详情', 1, 0, 4, '/device-detail', 'Monitor', 'DeviceDetail'),
+('history', '历史数据', 1, 0, 5, '/history', 'Histogram', 'HistoryData'),
+('user', '用户管理', 1, 0, 6, '/user', 'User', 'UserList'),
+('role', '角色管理', 1, 0, 7, '/role', 'UserFilled', 'RoleList'),
+('log', '日志审计', 1, 0, 8, '/log', 'Document', 'LogAudit'),
+('simulator', '数据模拟器', 1, 0, 9, '/simulator', 'MagicStick', 'Simulator')
 ON CONFLICT (permission_code) DO NOTHING;
 
 INSERT INTO sys_role_permission (role_id, permission_id)
@@ -286,18 +216,12 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_role_permission (role_id, permission_id)
 SELECT r.id, p.id FROM sys_role r, sys_permission p
-WHERE r.role_code = 'OPERATOR' AND p.permission_code IN (
-    'admin-home','profile','park','device','device-detail',
-    'dashboard','history','simulator','log','alert-rule','alert-center'
-)
+WHERE r.role_code = 'OPERATOR' AND p.permission_code IN ('dashboard','park','device','device-detail','history','simulator')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_role_permission (role_id, permission_id)
 SELECT r.id, p.id FROM sys_role r, sys_permission p
-WHERE r.role_code = 'VIEWER' AND p.permission_code IN (
-    'admin-home','profile','park','device','device-detail',
-    'dashboard','history','alert-center'
-)
+WHERE r.role_code = 'VIEWER' AND p.permission_code IN ('dashboard','device-detail','history')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO park (park_code, park_name, location, longitude, latitude, description, status) VALUES
@@ -328,17 +252,3 @@ INSERT INTO device (device_code, device_name, device_type, park_id, install_loca
 ('METER-101', '园区总电表', 'METER', (SELECT id FROM park WHERE park_code = 'PARK-002'), '高压配电室', 1500.000, 'MQTT', 1, '关口计量表'),
 ('LOAD-101', '主楼办公负荷', 'LOAD', (SELECT id FROM park WHERE park_code = 'PARK-002'), '主楼低压柜', 900.000, 'MQTT', 1, '综合办公负荷')
 ON CONFLICT (device_code) DO NOTHING;
-
--- ============ 默认告警规则 ============
-
-INSERT INTO alert_rule (rule_name, rule_code, rule_type, alert_level, scope_type, duration_seconds, description, status) VALUES
-('设备离线告警', 'RULE-DEVICE-OFFLINE', 'DEVICE_OFFLINE', 'MAJOR', 'ALL', 300, '设备超过5分钟未上报数据视为离线', 1),
-('数据缺失告警', 'RULE-DATA-MISSING', 'DATA_MISSING', 'MINOR', 'ALL', 60, '实时数据超过60秒未更新视为数据缺失', 1)
-ON CONFLICT (rule_code) DO NOTHING;
-
-INSERT INTO alert_rule (rule_name, rule_code, rule_type, alert_level, scope_type, device_type, threshold_operator, threshold_value, threshold_value2, metric_code, duration_seconds, recovery_operator, recovery_value, recovery_value2, description, status) VALUES
-('功率异常告警', 'RULE-POWER-ABNORMAL', 'POWER_ABNORMAL', 'MINOR', 'DEVICE_TYPE', 'PV', 'GTE', 1000, NULL, 'power', 60, 'LT', 900, NULL, '光伏功率大于等于1000kW持续60秒触发告警，低于900kW恢复', 1),
-('电压异常告警', 'RULE-VOLTAGE-ABNORMAL', 'VOLTAGE_ABNORMAL', 'MAJOR', 'ALL', NULL, 'NOT_BETWEEN', 200, 260, 'voltage', 30, 'BETWEEN', 210, 250, '电压不在200V~260V范围持续30秒触发告警，恢复至210V~250V范围恢复', 1),
-('储能SOC过高告警', 'RULE-ESS-SOC-HIGH', 'ESS_SOC_HIGH', 'WARNING', 'DEVICE_TYPE', 'ESS', 'GTE', 95, NULL, 'soc', 60, 'LT', 90, NULL, '储能SOC大于等于95%持续60秒触发告警，低于90%恢复', 1),
-('储能SOC过低告警', 'RULE-ESS-SOC-LOW', 'ESS_SOC_LOW', 'CRITICAL', 'DEVICE_TYPE', 'ESS', 'LTE', 10, NULL, 'soc', 60, 'GT', 20, NULL, '储能SOC小于等于10%持续60秒触发告警，高于20%恢复', 1)
-ON CONFLICT (rule_code) DO NOTHING;
