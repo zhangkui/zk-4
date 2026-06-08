@@ -279,3 +279,26 @@ export interface DeviceRealtimeData {
   metrics: Record<string, any>
   lastReportAt: string
 }
+
+export interface ParkDeviceOnlineRate {
+  parkId: number
+  parkName: string
+  totalDeviceCount: number
+  onlineDeviceCount: number
+  onlineRate: number
+  alarmCount: number
+}
+
+export interface AdminHomeStats {
+  userCount: number
+  roleCount: number
+  parkCount: number
+  deviceTotalCount: number
+  deviceOnlineCount: number
+  todayLoginCount: number
+  disabledUserCount: number
+  disabledDeviceCount: number
+  parkWithNoDeviceCount: number
+  parkOnlineRates: ParkDeviceOnlineRate[]
+  recentLoginLogs: SysLoginLog[]
+}

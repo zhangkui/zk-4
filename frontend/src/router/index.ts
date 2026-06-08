@@ -2,6 +2,12 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
+export interface MenuGroup {
+  title: string
+  icon?: string
+  children: RouteRecordRaw[]
+}
+
 export const constantRoutes: RouteRecordRaw[] = [
   {
     path: '/login',
@@ -12,7 +18,7 @@ export const constantRoutes: RouteRecordRaw[] = [
   {
     path: '/',
     component: DefaultLayout,
-    redirect: '/dashboard',
+    redirect: '/admin-home',
     meta: { hidden: true },
     children: []
   }
@@ -20,22 +26,58 @@ export const constantRoutes: RouteRecordRaw[] = [
 
 export const asyncRoutes: RouteRecordRaw[] = [
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/Dashboard.vue'),
-    meta: { title: '监测大屏', icon: 'Monitor', perm: 'dashboard' }
+    path: '/admin-home',
+    name: 'AdminHome',
+    component: () => import('@/views/AdminHome.vue'),
+    meta: { title: '首页', icon: 'HomeFilled', perm: 'admin-home', group: '管理中心' }
+  },
+  {
+    path: '/user',
+    name: 'UserList',
+    component: () => import('@/views/UserList.vue'),
+    meta: { title: '用户管理', icon: 'User', perm: 'user', group: '系统管理' }
+  },
+  {
+    path: '/role',
+    name: 'RoleList',
+    component: () => import('@/views/RoleList.vue'),
+    meta: { title: '角色管理', icon: 'UserFilled', perm: 'role', group: '系统管理' }
+  },
+  {
+    path: '/permission',
+    name: 'PermissionList',
+    component: () => import('@/views/PermissionList.vue'),
+    meta: { title: '权限管理', icon: 'Lock', perm: 'permission', group: '系统管理' }
+  },
+  {
+    path: '/login-log',
+    name: 'LoginLog',
+    component: () => import('@/views/LogAudit.vue'),
+    meta: { title: '登录日志', icon: 'Tickets', perm: 'log', group: '系统管理' }
+  },
+  {
+    path: '/operation-log',
+    name: 'OperationLog',
+    component: () => import('@/views/OperationLog.vue'),
+    meta: { title: '操作日志', icon: 'Notebook', perm: 'log', group: '系统管理' }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/Profile.vue'),
+    meta: { title: '个人中心', icon: 'Avatar', perm: 'profile', group: '系统管理' }
   },
   {
     path: '/park',
     name: 'ParkList',
     component: () => import('@/views/ParkList.vue'),
-    meta: { title: '园区管理', icon: 'OfficeBuilding', perm: 'park' }
+    meta: { title: '园区管理', icon: 'OfficeBuilding', perm: 'park', group: '基础档案' }
   },
   {
     path: '/device',
     name: 'DeviceList',
     component: () => import('@/views/DeviceList.vue'),
-    meta: { title: '设备台账', icon: 'Cpu', perm: 'device' }
+    meta: { title: '设备台账', icon: 'Cpu', perm: 'device', group: '基础档案' }
   },
   {
     path: '/device/:deviceCode',
@@ -44,35 +86,36 @@ export const asyncRoutes: RouteRecordRaw[] = [
     meta: { title: '设备详情', icon: 'Cpu', perm: 'device-detail', hidden: true }
   },
   {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('@/views/Dashboard.vue'),
+    meta: { title: '监测大屏', icon: 'Monitor', perm: 'dashboard', group: '运行监控' }
+  },
+  {
     path: '/history',
     name: 'HistoryData',
     component: () => import('@/views/HistoryData.vue'),
-    meta: { title: '历史数据', icon: 'Histogram', perm: 'history' }
-  },
-  {
-    path: '/user',
-    name: 'UserList',
-    component: () => import('@/views/UserList.vue'),
-    meta: { title: '用户管理', icon: 'User', perm: 'user' }
-  },
-  {
-    path: '/role',
-    name: 'RoleList',
-    component: () => import('@/views/RoleList.vue'),
-    meta: { title: '角色管理', icon: 'UserFilled', perm: 'role' }
-  },
-  {
-    path: '/log',
-    name: 'LogAudit',
-    component: () => import('@/views/LogAudit.vue'),
-    meta: { title: '日志审计', icon: 'Document', perm: 'log' }
+    meta: { title: '历史数据', icon: 'Histogram', perm: 'history', group: '运行监控' }
   },
   {
     path: '/simulator',
     name: 'Simulator',
     component: () => import('@/views/Simulator.vue'),
-    meta: { title: '数据模拟器', icon: 'Setting', perm: 'simulator' }
+    meta: { title: '数据模拟器', icon: 'Setting', perm: 'simulator', group: '运行监控' }
+  },
+  {
+    path: '/log',
+    name: 'LogAudit',
+    component: () => import('@/views/LogAudit.vue'),
+    meta: { title: '日志审计', icon: 'Document', perm: 'log', hidden: true }
   }
+]
+
+export const menuGroups: MenuGroup[] = [
+  { title: '管理中心', icon: 'HomeFilled', children: [] },
+  { title: '系统管理', icon: 'Setting', children: [] },
+  { title: '基础档案', icon: 'Files', children: [] },
+  { title: '运行监控', icon: 'Monitor', children: [] }
 ]
 
 const router = createRouter({
@@ -89,7 +132,7 @@ router.beforeEach(async (to, _from, next) => {
 
   if (token) {
     if (to.path === '/login') {
-      next('/dashboard')
+      next('/admin-home')
       return
     }
 

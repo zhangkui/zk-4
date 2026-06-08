@@ -9,18 +9,31 @@
         :default-active="activeMenu"
         :collapse="appStore.sidebarCollapsed"
         :collapse-transition="false"
+        :default-openeds="defaultOpeneds"
         router
         background-color="#001529"
         text-color="#c8d6ff"
         active-text-color="#409eff"
       >
-        <template v-for="route in menuRoutes" :key="route.path">
-          <el-menu-item :index="route.path">
-            <el-icon v-if="route.meta?.icon">
-              <component :is="route.meta.icon" />
-            </el-icon>
-            <template #title>{{ route.meta?.title }}</template>
-          </el-menu-item>
+        <template v-for="group in groupedMenus" :key="group.title">
+          <el-sub-menu v-if="group.children.length > 0" :index="group.title">
+            <template #title>
+              <el-icon v-if="group.icon">
+                <component :is="group.icon" />
+              </el-icon>
+              <span>{{ group.title }}</span>
+            </template>
+            <el-menu-item
+              v-for="route in group.children"
+              :key="route.path"
+              :index="route.path"
+            >
+              <el-icon v-if="route.meta?.icon">
+                <component :is="route.meta.icon" />
+              </el-icon>
+              <template #title>{{ route.meta?.title }}</template>
+            </el-menu-item>
+          </el-sub-menu>
         </template>
       </el-menu>
     </el-aside>
@@ -32,8 +45,11 @@
             <Expand v-else />
           </el-icon>
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/dashboard' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="currentRoute.meta?.title">{{ currentRoute.meta.title }}</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/admin-home' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item v-if="currentRoute.meta?.group">{{ currentRoute.meta.group }}</el-breadcrumb-item>
+            <el-breadcrumb-item v-if="currentRoute.meta?.title && currentRoute.path !== '/admin-home'">
+              {{ currentRoute.meta.title }}
+            </el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         <div class="header-right">
@@ -77,7 +93,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
-import { asyncRoutes } from '@/router'
+import { asyncRoutes, menuGroups } from '@/router'
+import type { MenuGroup } from '@/router'
 import type { RouteRecordRaw } from 'vue-router'
 
 const route = useRoute()
@@ -88,13 +105,31 @@ const appStore = useAppStore()
 const currentRoute = computed(() => route)
 const activeMenu = computed(() => route.path)
 
-const menuRoutes = computed(() => {
+const defaultOpeneds = computed(() => {
+  const group = route.meta?.group
+  return group ? [group as string] : ['管理中心']
+})
+
+const groupedMenus = computed((): MenuGroup[] => {
   const perms = userStore.permissions
-  return asyncRoutes.filter(r => {
+  const filteredRoutes = asyncRoutes.filter(r => {
     if (r.meta?.hidden) return false
     if (!r.meta?.perm) return true
     return perms.includes('*') || perms.includes('ADMIN') || perms.includes(r.meta.perm as string)
   }) as RouteRecordRaw[]
+
+  const groups: MenuGroup[] = menuGroups.map(g => ({ ...g, children: [] }))
+  const groupMap = new Map(groups.map(g => [g.title, g]))
+
+  filteredRoutes.forEach(r => {
+    const groupName = (r.meta?.group as string) || '其他'
+    const group = groupMap.get(groupName)
+    if (group) {
+      group.children.push(r)
+    }
+  })
+
+  return groups.filter(g => g.children.length > 0)
 })
 
 async function handleUserCommand(command: string) {
@@ -111,7 +146,7 @@ async function handleUserCommand(command: string) {
     } catch {
     }
   } else if (command === 'profile') {
-    ElMessage.info('个人中心功能开发中')
+    router.push('/profile')
   }
 }
 </script>
@@ -144,6 +179,14 @@ async function handleUserCommand(command: string) {
 
   .el-menu {
     border-right: none;
+  }
+
+  :deep(.el-sub-menu__title:hover) {
+    background-color: rgba(64, 158, 255, 0.1);
+  }
+
+  :deep(.el-menu-item:hover) {
+    background-color: rgba(64, 158, 255, 0.1);
   }
 }
 

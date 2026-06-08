@@ -30,5 +30,5 @@ export function resetUserPassword(id: number, newPassword: string) {
 }
 
 export function updateUserPassword(id: number, oldPassword: string, newPassword: string) {
-  return request.put<any, void>(`/users/${id}/password`, null, { params: { oldPassword, newPassword } })
+  return request.put<any, boolean>(`/users/${id}/password`, null, { params: { oldPassword, newPassword } })
 }
