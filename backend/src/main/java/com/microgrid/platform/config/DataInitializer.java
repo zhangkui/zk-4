@@ -70,6 +70,8 @@ public class DataInitializer implements CommandLineRunner {
         permDefs.add(new PermDef("dashboard", "监测大屏", 1, "/dashboard", "Monitor", null, null));
         permDefs.add(new PermDef("history", "历史数据", 1, "/history", "Histogram", null, null));
         permDefs.add(new PermDef("simulator", "数据模拟器", 1, "/simulator", "Setting", null, null));
+        permDefs.add(new PermDef("alert-rule", "告警规则", 1, "/alert-rule", "Warning", null, null));
+        permDefs.add(new PermDef("alert-center", "告警中心", 1, "/alert-center", "Bell", null, null));
 
         int count = 0;
         Map<String, SysPermission> existingMap = new HashMap<>();
@@ -149,17 +151,20 @@ public class DataInitializer implements CommandLineRunner {
         assignRolePerms("ADMIN", permMap, Arrays.asList(
                 "admin-home", "user", "role", "permission", "log", "profile",
                 "park", "device", "device-detail",
-                "dashboard", "history", "simulator"
+                "dashboard", "history", "simulator",
+                "alert-rule", "alert-center"
         ));
         assignRolePerms("OPERATOR", permMap, Arrays.asList(
                 "admin-home", "profile",
                 "park", "device", "device-detail",
-                "dashboard", "history", "simulator", "log"
+                "dashboard", "history", "simulator", "log",
+                "alert-rule", "alert-center"
         ));
         assignRolePerms("VIEWER", permMap, Arrays.asList(
                 "admin-home", "profile",
                 "park", "device", "device-detail",
-                "dashboard", "history"
+                "dashboard", "history",
+                "alert-center"
         ));
     }
 

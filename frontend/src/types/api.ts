@@ -302,3 +302,154 @@ export interface AdminHomeStats {
   parkOnlineRates: ParkDeviceOnlineRate[]
   recentLoginLogs: SysLoginLog[]
 }
+
+export type AlertRuleType = 'DEVICE_OFFLINE' | 'DATA_MISSING' | 'POWER_ABNORMAL' | 'VOLTAGE_ABNORMAL' | 'ESS_SOC_HIGH' | 'ESS_SOC_LOW'
+export type AlertLevel = 'CRITICAL' | 'MAJOR' | 'MINOR' | 'WARNING'
+export type AlertScopeType = 'ALL' | 'PARK' | 'DEVICE_TYPE' | 'DEVICE'
+export type AlertStatus = 'TRIGGERED' | 'RECOVERED'
+export type AlertOperator = 'GT' | 'GTE' | 'LT' | 'LTE' | 'EQ' | 'NEQ' | 'BETWEEN' | 'NOT_BETWEEN'
+
+export const AlertRuleTypeMap: Record<AlertRuleType, string> = {
+  DEVICE_OFFLINE: '设备离线告警',
+  DATA_MISSING: '数据缺失告警',
+  POWER_ABNORMAL: '功率异常告警',
+  VOLTAGE_ABNORMAL: '电压异常告警',
+  ESS_SOC_HIGH: '储能SOC过高告警',
+  ESS_SOC_LOW: '储能SOC过低告警'
+}
+
+export const AlertLevelMap: Record<AlertLevel, string> = {
+  CRITICAL: '紧急',
+  MAJOR: '重要',
+  MINOR: '次要',
+  WARNING: '提示'
+}
+
+export const AlertLevelTagTypeMap: Record<AlertLevel, string> = {
+  CRITICAL: 'danger',
+  MAJOR: 'danger',
+  MINOR: 'warning',
+  WARNING: 'info'
+}
+
+export const AlertScopeTypeMap: Record<AlertScopeType, string> = {
+  ALL: '全部设备',
+  PARK: '指定园区',
+  DEVICE_TYPE: '指定设备类型',
+  DEVICE: '指定设备'
+}
+
+export const AlertStatusMap: Record<AlertStatus, string> = {
+  TRIGGERED: '告警中',
+  RECOVERED: '已恢复'
+}
+
+export const AlertStatusTagTypeMap: Record<AlertStatus, string> = {
+  TRIGGERED: 'danger',
+  RECOVERED: 'success'
+}
+
+export const AlertOperatorMap: Record<AlertOperator, string> = {
+  GT: '大于',
+  GTE: '大于等于',
+  LT: '小于',
+  LTE: '小于等于',
+  EQ: '等于',
+  NEQ: '不等于',
+  BETWEEN: '在范围内',
+  NOT_BETWEEN: '不在范围内'
+}
+
+export interface AlertRuleInfo {
+  id: number
+  ruleName: string
+  ruleCode: string
+  ruleType: AlertRuleType
+  ruleTypeName: string
+  alertLevel: AlertLevel
+  alertLevelName: string
+  scopeType: AlertScopeType
+  scopeTypeName: string
+  scopeValue?: string
+  parkId?: number
+  parkName?: string
+  deviceType?: DeviceType
+  deviceTypeName?: string
+  deviceCode?: string
+  thresholdOperator?: AlertOperator
+  thresholdValue?: number
+  thresholdValue2?: number
+  metricCode?: string
+  durationSeconds: number
+  recoveryOperator?: AlertOperator
+  recoveryValue?: number
+  recoveryValue2?: number
+  description?: string
+  status: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface AlertRuleParams {
+  id?: number
+  ruleName: string
+  ruleCode: string
+  ruleType: AlertRuleType
+  alertLevel: AlertLevel
+  scopeType: AlertScopeType
+  scopeValue?: string
+  parkId?: number
+  deviceType?: DeviceType
+  deviceCode?: string
+  thresholdOperator?: AlertOperator
+  thresholdValue?: number
+  thresholdValue2?: number
+  metricCode?: string
+  durationSeconds: number
+  recoveryOperator?: AlertOperator
+  recoveryValue?: number
+  recoveryValue2?: number
+  description?: string
+  status: number
+}
+
+export interface AlertInfo {
+  id: number
+  alertNo: string
+  ruleId: number
+  ruleName: string
+  ruleCode: string
+  ruleType: AlertRuleType
+  ruleTypeName: string
+  alertLevel: AlertLevel
+  alertLevelName: string
+  parkId?: number
+  parkName?: string
+  deviceId?: number
+  deviceCode: string
+  deviceName?: string
+  deviceType?: DeviceType
+  deviceTypeName?: string
+  triggerValue?: number
+  thresholdValue?: number
+  metricCode?: string
+  alertStatus: AlertStatus
+  alertStatusName: string
+  triggerTime: string
+  recoveryTime?: string
+  alertMessage?: string
+  rawData?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface AlertQueryParams {
+  parkId?: number
+  deviceCode?: string
+  alertLevel?: AlertLevel
+  alertStatus?: AlertStatus
+  ruleType?: AlertRuleType
+  startTime?: string
+  endTime?: string
+  keyword?: string
+}

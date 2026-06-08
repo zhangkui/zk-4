@@ -41,4 +41,9 @@ public enum DeviceTypeEnum {
         DeviceTypeEnum type = fromCode(deviceType);
         return type != null && type.getMetrics().contains(metricCode);
     }
+
+    public static String getDescription(String code) {
+        DeviceTypeEnum type = fromCode(code);
+        return type != null ? type.getName() : code;
+    }
 }

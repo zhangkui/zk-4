@@ -63,6 +63,12 @@ export const asyncRoutes: RouteRecordRaw[] = [
     meta: { title: '操作日志', icon: 'Notebook', perm: 'log', group: '系统管理' }
   },
   {
+    path: '/alert-rule',
+    name: 'AlertRuleList',
+    component: () => import('@/views/AlertRuleList.vue'),
+    meta: { title: '告警规则', icon: 'Warning', perm: 'alert-rule', group: '系统管理' }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),
@@ -91,6 +97,12 @@ export const asyncRoutes: RouteRecordRaw[] = [
     name: 'Dashboard',
     component: () => import('@/views/Dashboard.vue'),
     meta: { title: '监测大屏', icon: 'Monitor', perm: 'dashboard', group: '运行监控' }
+  },
+  {
+    path: '/alert-center',
+    name: 'AlertCenter',
+    component: () => import('@/views/AlertCenter.vue'),
+    meta: { title: '告警中心', icon: 'Bell', perm: 'alert-center', group: '运行监控' }
   },
   {
     path: '/history',

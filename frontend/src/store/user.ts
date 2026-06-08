@@ -93,7 +93,9 @@ export const useUserStore = defineStore('user', () => {
       { path: '/login-log', perm: 'log' },
       { path: '/operation-log', perm: 'log' },
       { path: '/profile', perm: 'profile' },
-      { path: '/simulator', perm: 'simulator' }
+      { path: '/simulator', perm: 'simulator' },
+      { path: '/alert-rule', perm: 'alert-rule' },
+      { path: '/alert-center', perm: 'alert-center' }
     ]
     if (perms.includes('*') || perms.includes('ADMIN')) {
       return allMenus.map(m => m.path)

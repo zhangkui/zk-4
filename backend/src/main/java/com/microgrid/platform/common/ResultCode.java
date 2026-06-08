@@ -31,7 +31,11 @@ public enum ResultCode {
     PERMISSION_DENIED(1501, "权限不足"),
 
     DATA_INGEST_ERROR(1601, "数据接入错误"),
-    INVALID_METRIC_CODE(1602, "无效的指标编码");
+    INVALID_METRIC_CODE(1602, "无效的指标编码"),
+
+    ALERT_RULE_NOT_FOUND(1701, "告警规则不存在"),
+    ALERT_RULE_CODE_EXISTS(1702, "告警规则编码已存在"),
+    ALERT_NOT_FOUND(1703, "告警记录不存在");
 
     private final Integer code;
     private final String message;
