@@ -16,9 +16,13 @@ public interface SysUserRoleRepository extends JpaRepository<SysUserRole, Long> 
 
     List<SysUserRole> findByRoleId(Long roleId);
 
-    void deleteByUserId(Long userId);
+    @Modifying
+    @Query("DELETE FROM SysUserRole ur WHERE ur.userId = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 
-    void deleteByRoleId(Long roleId);
+    @Modifying
+    @Query("DELETE FROM SysUserRole ur WHERE ur.roleId = :roleId")
+    void deleteByRoleId(@Param("roleId") Long roleId);
 
     boolean existsByUserIdAndRoleId(Long userId, Long roleId);
 

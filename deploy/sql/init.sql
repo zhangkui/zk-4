@@ -168,6 +168,71 @@ CREATE INDEX IF NOT EXISTS idx_device_metric_data_device_code_ts ON device_metri
 CREATE INDEX IF NOT EXISTS idx_device_metric_data_metric_code_ts ON device_metric_data(metric_code, ts DESC);
 CREATE INDEX IF NOT EXISTS idx_device_metric_data_park_id_ts ON device_metric_data(park_id, ts DESC);
 
+-- ============ 告警模块 ============
+
+CREATE TABLE IF NOT EXISTS alert_rule (
+    id BIGSERIAL PRIMARY KEY,
+    rule_name VARCHAR(100) NOT NULL,
+    rule_code VARCHAR(50) NOT NULL UNIQUE,
+    rule_type VARCHAR(50) NOT NULL,
+    alert_level VARCHAR(20) NOT NULL,
+    scope_type VARCHAR(20) NOT NULL,
+    scope_value VARCHAR(500),
+    park_id BIGINT REFERENCES park(id),
+    device_type VARCHAR(30),
+    device_code VARCHAR(100),
+    threshold_operator VARCHAR(10),
+    threshold_value DECIMAL(20, 6),
+    threshold_value2 DECIMAL(20, 6),
+    metric_code VARCHAR(100),
+    duration_seconds INTEGER NOT NULL DEFAULT 0,
+    recovery_operator VARCHAR(20),
+    recovery_value DECIMAL(20, 6),
+    recovery_value2 DECIMAL(20, 6),
+    description VARCHAR(500),
+    status SMALLINT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_alert_rule_type ON alert_rule(rule_type);
+CREATE INDEX IF NOT EXISTS idx_alert_rule_status ON alert_rule(status);
+CREATE INDEX IF NOT EXISTS idx_alert_rule_level ON alert_rule(alert_level);
+
+CREATE TABLE IF NOT EXISTS alert (
+    id BIGSERIAL PRIMARY KEY,
+    alert_no VARCHAR(50) NOT NULL UNIQUE,
+    rule_id BIGINT NOT NULL REFERENCES alert_rule(id) ON DELETE CASCADE,
+    rule_name VARCHAR(100) NOT NULL,
+    rule_code VARCHAR(50) NOT NULL,
+    rule_type VARCHAR(50) NOT NULL,
+    alert_level VARCHAR(20) NOT NULL,
+    park_id BIGINT REFERENCES park(id),
+    park_name VARCHAR(100),
+    device_id BIGINT REFERENCES device(id),
+    device_code VARCHAR(50) NOT NULL,
+    device_name VARCHAR(100),
+    device_type VARCHAR(30),
+    trigger_value DECIMAL(20, 6),
+    threshold_value DECIMAL(20, 6),
+    metric_code VARCHAR(100),
+    alert_status VARCHAR(20) NOT NULL,
+    trigger_time TIMESTAMP NOT NULL,
+    recovery_time TIMESTAMP,
+    alert_message VARCHAR(500),
+    raw_data TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_alert_rule_id ON alert(rule_id);
+CREATE INDEX IF NOT EXISTS idx_alert_device_code ON alert(device_code);
+CREATE INDEX IF NOT EXISTS idx_alert_status ON alert(alert_status);
+CREATE INDEX IF NOT EXISTS idx_alert_level ON alert(alert_level);
+CREATE INDEX IF NOT EXISTS idx_alert_park_id ON alert(park_id);
+CREATE INDEX IF NOT EXISTS idx_alert_trigger_time ON alert(trigger_time);
+CREATE INDEX IF NOT EXISTS idx_alert_unique ON alert(rule_id, device_code, alert_status);
+
 -- ============ 初始数据 ============
 
 INSERT INTO sys_role (role_code, role_name, description, status) VALUES
@@ -199,14 +264,16 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_permission (permission_code, permission_name, permission_type, parent_id, sort_order, path, icon, component) VALUES
 ('dashboard', '监测大屏', 1, 0, 1, '/dashboard', 'DataAnalysis', 'Dashboard'),
-('park', '园区管理', 1, 0, 2, '/park', 'OfficeBuilding', 'ParkList'),
-('device', '设备台账', 1, 0, 3, '/device', 'Cpu', 'DeviceList'),
-('device-detail', '设备详情', 1, 0, 4, '/device-detail', 'Monitor', 'DeviceDetail'),
-('history', '历史数据', 1, 0, 5, '/history', 'Histogram', 'HistoryData'),
-('user', '用户管理', 1, 0, 6, '/user', 'User', 'UserList'),
-('role', '角色管理', 1, 0, 7, '/role', 'UserFilled', 'RoleList'),
-('log', '日志审计', 1, 0, 8, '/log', 'Document', 'LogAudit'),
-('simulator', '数据模拟器', 1, 0, 9, '/simulator', 'MagicStick', 'Simulator')
+('alert-center', '告警中心', 1, 0, 2, '/alert-center', 'Bell', 'AlertCenter'),
+('park', '园区管理', 1, 0, 3, '/park', 'OfficeBuilding', 'ParkList'),
+('device', '设备台账', 1, 0, 4, '/device', 'Cpu', 'DeviceList'),
+('device-detail', '设备详情', 1, 0, 5, '/device-detail', 'Monitor', 'DeviceDetail'),
+('history', '历史数据', 1, 0, 6, '/history', 'Histogram', 'HistoryData'),
+('user', '用户管理', 1, 0, 7, '/user', 'User', 'UserList'),
+('role', '角色管理', 1, 0, 8, '/role', 'UserFilled', 'RoleList'),
+('log', '日志审计', 1, 0, 9, '/log', 'Document', 'LogAudit'),
+('alert-rule', '告警规则', 1, 0, 10, '/alert-rule', 'Warning', 'AlertRuleList'),
+('simulator', '数据模拟器', 1, 0, 11, '/simulator', 'MagicStick', 'Simulator')
 ON CONFLICT (permission_code) DO NOTHING;
 
 INSERT INTO sys_role_permission (role_id, permission_id)
@@ -216,12 +283,12 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_role_permission (role_id, permission_id)
 SELECT r.id, p.id FROM sys_role r, sys_permission p
-WHERE r.role_code = 'OPERATOR' AND p.permission_code IN ('dashboard','park','device','device-detail','history','simulator')
+WHERE r.role_code = 'OPERATOR' AND p.permission_code IN ('dashboard','alert-center','park','device','device-detail','history','simulator','log','alert-rule')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_role_permission (role_id, permission_id)
 SELECT r.id, p.id FROM sys_role r, sys_permission p
-WHERE r.role_code = 'VIEWER' AND p.permission_code IN ('dashboard','device-detail','history')
+WHERE r.role_code = 'VIEWER' AND p.permission_code IN ('dashboard','alert-center','device-detail','history')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO park (park_code, park_name, location, longitude, latitude, description, status) VALUES
@@ -252,3 +319,12 @@ INSERT INTO device (device_code, device_name, device_type, park_id, install_loca
 ('METER-101', '园区总电表', 'METER', (SELECT id FROM park WHERE park_code = 'PARK-002'), '高压配电室', 1500.000, 'MQTT', 1, '关口计量表'),
 ('LOAD-101', '主楼办公负荷', 'LOAD', (SELECT id FROM park WHERE park_code = 'PARK-002'), '主楼低压柜', 900.000, 'MQTT', 1, '综合办公负荷')
 ON CONFLICT (device_code) DO NOTHING;
+
+INSERT INTO alert_rule (rule_code, rule_name, rule_type, alert_level, scope_type, device_type, duration_seconds, threshold_operator, threshold_value, threshold_value2, metric_code, recovery_operator, recovery_value, recovery_value2, description, status) VALUES
+('RULE-DEVICE-OFFLINE', '设备离线告警', 'DEVICE_OFFLINE', 'MAJOR', 'ALL', NULL, 300, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '设备超过5分钟未上报数据视为离线', 1),
+('RULE-DATA-MISSING', '数据缺失告警', 'DATA_MISSING', 'MINOR', 'ALL', NULL, 60, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '设备实时数据超过60秒未更新', 1),
+('RULE-POWER-HIGH', '功率过高告警', 'POWER_ABNORMAL', 'MAJOR', 'ALL', NULL, 60, 'GTE', 1200.000, NULL, 'power', 'LT', 1000.000, NULL, '设备功率超过1200kW持续60秒触发告警', 1),
+('RULE-VOLTAGE-ABNORMAL', '电压异常告警', 'VOLTAGE_ABNORMAL', 'MINOR', 'ALL', NULL, 30, 'NOT_BETWEEN', 200.000, 260.000, 'voltage', 'BETWEEN', 210.000, 250.000, '电压超出200V~260V范围持续30秒触发告警', 1),
+('RULE-ESS-SOC-HIGH', '储能SOC过高告警', 'ESS_SOC_HIGH', 'WARNING', 'DEVICE_TYPE', 'ESS', 60, 'GTE', 95.000, NULL, 'soc', 'LT', 90.000, NULL, '储能设备SOC超过95%持续60秒触发告警，仅针对ESS类型设备', 1),
+('RULE-ESS-SOC-LOW', '储能SOC过低告警', 'ESS_SOC_LOW', 'WARNING', 'DEVICE_TYPE', 'ESS', 60, 'LTE', 10.000, NULL, 'soc', 'GT', 20.000, NULL, '储能设备SOC低于10%持续60秒触发告警，仅针对ESS类型设备', 1)
+ON CONFLICT (rule_code) DO NOTHING;

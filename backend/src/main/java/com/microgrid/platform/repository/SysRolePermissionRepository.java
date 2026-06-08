@@ -16,9 +16,13 @@ public interface SysRolePermissionRepository extends JpaRepository<SysRolePermis
 
     List<SysRolePermission> findByPermissionId(Long permissionId);
 
-    void deleteByRoleId(Long roleId);
+    @Modifying
+    @Query("DELETE FROM SysRolePermission rp WHERE rp.roleId = :roleId")
+    void deleteByRoleId(@Param("roleId") Long roleId);
 
-    void deleteByPermissionId(Long permissionId);
+    @Modifying
+    @Query("DELETE FROM SysRolePermission rp WHERE rp.permissionId = :permissionId")
+    void deleteByPermissionId(@Param("permissionId") Long permissionId);
 
     boolean existsByRoleIdAndPermissionId(Long roleId, Long permissionId);
 
